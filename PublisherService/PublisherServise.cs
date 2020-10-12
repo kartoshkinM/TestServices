@@ -25,7 +25,12 @@ namespace PublisherService
         {
             _config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
             _connection = new ConnectionFactory().CreateConnection();
-            _lastMessage = Serialization.DeserializeMessage(_config.AppSettings.Settings["lastMessage"].Value);
+            _lastMessage = string.IsNullOrEmpty(_config.AppSettings.Settings["lastMessageId"].Value) ? null :
+                new MESSAGE
+                {
+                    ID = new Guid(_config.AppSettings.Settings["lastMessageId"].Value),
+                    NUM = int.Parse(_config.AppSettings.Settings["lastMessageNum"].Value)
+                };
             _timer = new Timer(PublishMessage, null, 0, 1000);
         }
 
@@ -33,7 +38,8 @@ namespace PublisherService
         {
             _timer.Dispose();
             _connection.Dispose();
-            _config.AppSettings.Settings["lastMessage"].Value = Serialization.SerializeMessage(_lastMessage);
+            _config.AppSettings.Settings["lastMessageId"].Value = _lastMessage.ID.ToString();
+            _config.AppSettings.Settings["lastMessageNum"].Value = _lastMessage.NUM.ToString();
             _config.Save(ConfigurationSaveMode.Modified);
         }
 
